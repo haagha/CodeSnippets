@@ -5,19 +5,20 @@ import re
 
 list_of_list = []
 cmdlist = []
-with open('timeout5seq20.csv') as csvfile:
+counter = 0
+with open('30d5m.csv') as csvfile:
+
+    #data format = ['["account list","group show","storage account create"]']
     list_of_list = (csv.reader(csvfile))
+
+    # remove brackets and split into list
+    # cmdlist format = [['"account list"','"group show"','"storage account create"'], ['"account list2"','"group show2"','"storage account create2"']]
     for lines in list_of_list:
         newline = re.sub('[\[\]]', '', lines[0])
-        #print(newline)
         newlist = newline.split(",")
         cmdlist.append(newlist)
-
+        
 print("total sessions = " + str(len(cmdlist)))
-#for i in range(len(cmdlist)):
-#    print(cmdlist[i])
-
-#sleep(600)
 
 def concatenate_list_data(list):
     result= ' '
@@ -26,18 +27,44 @@ def concatenate_list_data(list):
     return result
 
 
+# Create a set of all substrings in from all lists
+#create a copy of seq
+
 def find_most_common_substring(list_of_list, min_key_len, max_key_len):
     # First, we create a set of all substrings in from all lists
     substrings = dict()
     for x in range(len(list_of_list)):        
         for i in range(len(list_of_list[x])-1):
-            for j in range(i, i+max_key_len-min_key_len+1):
-                if j+min_key_len > len(list_of_list[x]):
-                    break
-                seq = ''.join(map(concatenate_list_data, list_of_list[x][i:j+min_key_len]))
-                seq = re.sub('[\[\]]', '', seq)
+            for j in range(i, len(list_of_list[x])-1):
                 
+                write_seq = []
+                temp_min_key = min_key_len
+                # iterate over each element in seq and if read then keep iterating
+                for k in range(j, j+temp_min_key):
+                    if k+temp_min_key > len(list_of_list[x]):
+                        break
+                    command = list_of_list[x][k]
+                    if any(read_cmds in command for read_cmds in ('show', 'list', 'get')):
+                        temp_min_key = temp_min_key+1
+                        #print(command + " read command")
+                    else:
+                        write_seq.append(command)
+                        #print(command + " write command")
+                
+                #print(write_seq)
+                if j+temp_min_key > len(list_of_list[x]):
+                    break
+                if write_seq == []:
+                    continue
+                
+                if len(write_seq) < 3:
+                    continue
+                seq = ''.join(map(concatenate_list_data, write_seq))                
+                seq = re.sub('[\[\]]', '', seq)
                 #print(seq)
+                
+
+
                 if seq not in substrings:
                     substrings[seq] = 0
                 substrings[seq] += 1
@@ -69,8 +96,8 @@ def find_most_common_substring(list_of_list, min_key_len, max_key_len):
     return max(substrings, key=substrings.get)
 
 
-lister=[['"storage blob upload","vm show","image create"'],
-["storage blob upload2","vm show2","image create2","storage blob upload","vm show","image create","storage blob upload2","vm show2","image create2","storage blob upload","vm show","image create"],
+lister=[[''],['"storage blob upload","vm show","image create"'],
+["storage blob upload2","vm show2","image create2","storage blob 21","vm show21","image create21","storage blob upload21","vm show21","image create21","storage blob upload22","vm show22","image create22"],
 ["storage blob upload3","vm show3","image create3"]]
 
 find_most_common_substring(cmdlist, 4, 5)
