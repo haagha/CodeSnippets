@@ -6,7 +6,7 @@ import re
 list_of_list = []
 cmdlist = []
 counter = 0
-with open('30d5m.csv') as csvfile:
+with open('30d30t.csv') as csvfile:
 
     #data format = ['["account list","group show","storage account create"]']
     list_of_list = (csv.reader(csvfile))
@@ -57,7 +57,7 @@ def find_most_common_substring(list_of_list, min_key_len, max_key_len):
                 if write_seq == []:
                     continue
                 
-                if len(write_seq) < 3:
+                if len(write_seq) < min_key_len:
                     continue
                 seq = ''.join(map(concatenate_list_data, write_seq))                
                 seq = re.sub('[\[\]]', '', seq)
@@ -90,7 +90,7 @@ def find_most_common_substring(list_of_list, min_key_len, max_key_len):
 
     # sort dictionary and print top 10
     print("top 30 most common occuring sequences of " + str(min_key_len) + " to " + str(max_key_len) + " commands")
-    for kv in sorted(substrings.items(), key=lambda kv: kv[1], reverse=True)[:20]:
+    for kv in sorted(substrings.items(), key=lambda kv: kv[1], reverse=True)[:30]:
         print(kv[0], kv[1])
 
     return max(substrings, key=substrings.get)
@@ -100,4 +100,4 @@ lister=[[''],['"storage blob upload","vm show","image create"'],
 ["storage blob upload2","vm show2","image create2","storage blob 21","vm show21","image create21","storage blob upload21","vm show21","image create21","storage blob upload22","vm show22","image create22"],
 ["storage blob upload3","vm show3","image create3"]]
 
-find_most_common_substring(cmdlist, 4, 5)
+find_most_common_substring(cmdlist, 5, 5)

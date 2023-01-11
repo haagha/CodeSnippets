@@ -1,0 +1,34 @@
+﻿// users with over 50 non redundant calls yesterday
+// break down in sessions and make call sequence
+// 
+// from each session -> find call sequence
+
+
+let vmcmds=(
+cluster('ddazureclients.kusto.windows.net').database('AzureCli').RawEventsAzCli
+| where EventName contains "azurecli/command"
+| where StartTime > ago(30d)
+| summarize  min(StartTime) by RawCommand, Params, MacAddressHash //this is to remove duplicates of cmds in telemetry/ or retries 
+| where RawCommand contains "vm"
+| distinct MacAddressHash
+| project MacAddressHash
+);
+let timeout = 30;
+cluster('ddazureclients.kusto.windows.net').database('AzureCli').RawEventsAzCli
+| where EventName contains "azurecli/command"
+| where StartTime > ago(30d)
+| where MacAddressHash in (vmcmds)
+| summarize  min(StartTime) by RawCommand, Params, MacAddressHash //this is to remove duplicates of cmds in telemetry/ or retries
+| where RawCommand != ""
+| sort by MacAddressHash, min_StartTime asc
+| extend pre = prev(min_StartTime,1)
+| extend nexttime = datetime_diff('second', min_StartTime, pre)
+//| where nexttime > 10
+| extend nextsesh = datetime_diff('minute', min_StartTime, pre)
+| where nextsesh < timeout
+| summarize seq = make_list(RawCommand) by MacAddressHash, nextsesh
+| where array_length( seq) > 1
+| extend seqlen = array_length(seq)
+| sort by seqlen,MacAddressHash, nextsesh
+| where seqlen < 50
+| project seq
